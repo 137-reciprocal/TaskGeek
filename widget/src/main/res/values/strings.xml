@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="task_list_widget_description">Shows your next 5 tasks by urgency</string>
+    <string name="hero_stats_widget_description">Shows your hero level, stats, and progress</string>
+</resources>

@@ -1,0 +1,187 @@
+# TaskHero Baseline Profile
+# This file contains method and class patterns for Ahead-of-Time (AOT) compilation
+# to improve app startup time and reduce jank during runtime.
+
+# ========================================
+# Application Initialization
+# ========================================
+Lcom/taskhero/TaskHeroApplication;
+HSPLcom/taskhero/TaskHeroApplication;->onCreate()V
+HSPLcom/taskhero/TaskHeroApplication;-><init>()V
+
+# ========================================
+# MainActivity and Main Screen
+# ========================================
+Lcom/taskhero/MainActivity;
+HSPLcom/taskhero/MainActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/taskhero/MainActivity;-><init>()V
+
+# MainScreen Composable
+Lcom/taskhero/MainScreenKt;
+HSPLcom/taskhero/MainScreenKt;->MainScreen(Landroidx/compose/runtime/Composer;I)V
+
+# ========================================
+# Navigation
+# ========================================
+Lcom/taskhero/navigation/NavGraphKt;
+HSPLcom/taskhero/navigation/NavGraphKt;->NavGraph(Landroidx/navigation/NavHostController;Landroidx/compose/runtime/Composer;I)V
+
+# ========================================
+# Theme and UI Core
+# ========================================
+Lcom/taskhero/core/ui/theme/ThemeKt;
+HSPLcom/taskhero/core/ui/theme/ThemeKt;->TaskHeroTheme(ZZLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+
+Lcom/taskhero/core/ui/theme/ColorKt;
+HSPLcom/taskhero/core/ui/theme/ColorKt;->getDarkColorScheme()Landroidx/compose/material3/ColorScheme;
+HSPLcom/taskhero/core/ui/theme/ColorKt;->getLightColorScheme()Landroidx/compose/material3/ColorScheme;
+
+Lcom/taskhero/core/ui/theme/TypeKt;
+HSPLcom/taskhero/core/ui/theme/TypeKt;->getTypography()Landroidx/compose/material3/Typography;
+
+# ========================================
+# Task List Feature (Most frequently used)
+# ========================================
+# Task List Screen
+Lcom/taskhero/feature/tasklist/TaskListScreenKt;
+HSPLcom/taskhero/feature/tasklist/TaskListScreenKt;->TaskListScreen(Landroidx/navigation/NavController;Landroidx/compose/runtime/Composer;I)V
+
+# Task List ViewModel
+Lcom/taskhero/feature/tasklist/TaskListViewModel;
+HSPLcom/taskhero/feature/tasklist/TaskListViewModel;-><init>(Lcom/taskhero/domain/task/usecase/GetTasksUseCase;Lcom/taskhero/domain/task/usecase/UpdateTaskUseCase;Lcom/taskhero/domain/task/usecase/DeleteTaskUseCase;Lcom/taskhero/domain/filter/usecase/GetActiveFilterUseCase;Lcom/taskhero/domain/filter/usecase/UpdateFilterUseCase;)V
+HSPLcom/taskhero/feature/tasklist/TaskListViewModel;->processIntent(Lcom/taskhero/feature/tasklist/TaskListIntent;)V
+HSPLcom/taskhero/feature/tasklist/TaskListViewModel;->getUiState()Lkotlinx/coroutines/flow/StateFlow;
+
+# Task Card Component
+Lcom/taskhero/feature/tasklist/components/TaskCardKt;
+HSPLcom/taskhero/feature/tasklist/components/TaskCardKt;->TaskCard(Lcom/taskhero/core/common/model/Task;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;I)V
+
+# ========================================
+# Database Access (Critical Path)
+# ========================================
+# Database instance
+Lcom/taskhero/core/database/TaskHeroDatabase;
+HSPLcom/taskhero/core/database/TaskHeroDatabase;->taskDao()Lcom/taskhero/core/database/dao/TaskDao;
+HSPLcom/taskhero/core/database/TaskHeroDatabase;->tagDao()Lcom/taskhero/core/database/dao/TagDao;
+HSPLcom/taskhero/core/database/TaskHeroDatabase;->heroDao()Lcom/taskhero/core/database/dao/HeroDao;
+
+# Task DAO (Hot path)
+Lcom/taskhero/core/database/dao/TaskDao;
+HSPLcom/taskhero/core/database/dao/TaskDao;->getAllTasksFlow()Lkotlinx/coroutines/flow/Flow;
+HSPLcom/taskhero/core/database/dao/TaskDao;->getTaskById(Ljava/lang/String;)Lkotlinx/coroutines/flow/Flow;
+HSPLcom/taskhero/core/database/dao/TaskDao;->updateTask(Lcom/taskhero/core/database/entity/TaskEntity;)Ljava/lang/Object;
+HSPLcom/taskhero/core/database/dao/TaskDao;->insertTask(Lcom/taskhero/core/database/entity/TaskEntity;)Ljava/lang/Object;
+
+# Task Entity
+Lcom/taskhero/core/database/entity/TaskEntity;
+HSPLcom/taskhero/core/database/entity/TaskEntity;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZJJJLjava/lang/String;ILjava/util/List;Ljava/lang/Integer;ZZLjava/lang/Long;)V
+HSPLcom/taskhero/core/database/entity/TaskEntity;->getId()Ljava/lang/String;
+HSPLcom/taskhero/core/database/entity/TaskEntity;->getTitle()Ljava/lang/String;
+HSPLcom/taskhero/core/database/entity/TaskEntity;->isCompleted()Z
+
+# ========================================
+# Domain Layer (Use Cases)
+# ========================================
+# Get Tasks Use Case
+Lcom/taskhero/domain/task/usecase/GetTasksUseCase;
+HSPLcom/taskhero/domain/task/usecase/GetTasksUseCase;->invoke()Lkotlinx/coroutines/flow/Flow;
+HSPLcom/taskhero/domain/task/usecase/GetTasksUseCase;-><init>(Lcom/taskhero/domain/task/repository/TaskRepository;)V
+
+# Update Task Use Case
+Lcom/taskhero/domain/task/usecase/UpdateTaskUseCase;
+HSPLcom/taskhero/domain/task/usecase/UpdateTaskUseCase;->invoke(Lcom/taskhero/core/common/model/Task;)Ljava/lang/Object;
+HSPLcom/taskhero/domain/task/usecase/UpdateTaskUseCase;-><init>(Lcom/taskhero/domain/task/repository/TaskRepository;)V
+
+# ========================================
+# Data Layer (Repository)
+# ========================================
+Lcom/taskhero/data/task/repository/TaskRepositoryImpl;
+HSPLcom/taskhero/data/task/repository/TaskRepositoryImpl;->getTasks()Lkotlinx/coroutines/flow/Flow;
+HSPLcom/taskhero/data/task/repository/TaskRepositoryImpl;->getTaskById(Ljava/lang/String;)Lkotlinx/coroutines/flow/Flow;
+HSPLcom/taskhero/data/task/repository/TaskRepositoryImpl;->updateTask(Lcom/taskhero/core/common/model/Task;)Ljava/lang/Object;
+HSPLcom/taskhero/data/task/repository/TaskRepositoryImpl;-><init>(Lcom/taskhero/core/database/dao/TaskDao;Lcom/taskhero/core/database/dao/TaskTagDao;)V
+
+# ========================================
+# Model Classes (Frequently Used)
+# ========================================
+Lcom/taskhero/core/common/model/Task;
+HSPLcom/taskhero/core/common/model/Task;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/time/LocalDateTime;Ljava/time/LocalDateTime;Ljava/time/LocalDateTime;Lcom/taskhero/core/common/model/Priority;ILjava/util/List;Ljava/lang/Integer;ZZLjava/time/LocalDateTime;)V
+HSPLcom/taskhero/core/common/model/Task;->getId()Ljava/lang/String;
+HSPLcom/taskhero/core/common/model/Task;->getTitle()Ljava/lang/String;
+HSPLcom/taskhero/core/common/model/Task;->isCompleted()Z
+HSPLcom/taskhero/core/common/model/Task;->getPriority()Lcom/taskhero/core/common/model/Priority;
+HSPLcom/taskhero/core/common/model/Task;->getDueDate()Ljava/time/LocalDateTime;
+
+Lcom/taskhero/core/common/model/Priority;
+HSPLcom/taskhero/core/common/model/Priority;->values()[Lcom/taskhero/core/common/model/Priority;
+HSPLcom/taskhero/core/common/model/Priority;->valueOf(Ljava/lang/String;)Lcom/taskhero/core/common/model/Priority;
+
+Lcom/taskhero/core/common/model/Tag;
+HSPLcom/taskhero/core/common/model/Tag;-><init>(Ljava/lang/String;Ljava/lang/String;J)V
+HSPLcom/taskhero/core/common/model/Tag;->getId()Ljava/lang/String;
+HSPLcom/taskhero/core/common/model/Tag;->getName()Ljava/lang/String;
+
+# ========================================
+# Hilt Dependency Injection
+# ========================================
+# Hilt generated components
+Lcom/taskhero/TaskHeroApplication_HiltComponents$SingletonC;
+Lcom/taskhero/MainActivity_HiltComponents$ActivityC;
+
+# Database Module
+Lcom/taskhero/core/database/DatabaseModule;
+HSPLcom/taskhero/core/database/DatabaseModule;->provideDatabase(Landroid/content/Context;)Lcom/taskhero/core/database/TaskHeroDatabase;
+HSPLcom/taskhero/core/database/DatabaseModule;->provideTaskDao(Lcom/taskhero/core/database/TaskHeroDatabase;)Lcom/taskhero/core/database/dao/TaskDao;
+
+# ========================================
+# Coroutines and Flow
+# ========================================
+Lkotlinx/coroutines/flow/StateFlowKt;
+HSPLkotlinx/coroutines/flow/StateFlowKt;->MutableStateFlow(Ljava/lang/Object;)Lkotlinx/coroutines/flow/MutableStateFlow;
+
+Lkotlinx/coroutines/flow/FlowKt;
+HSPLkotlinx/coroutines/flow/FlowKt;->flow(Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/flow/Flow;
+HSPLkotlinx/coroutines/flow/FlowKt;->collect(Lkotlinx/coroutines/flow/Flow;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+
+# ========================================
+# Task Detail Feature
+# ========================================
+Lcom/taskhero/feature/taskdetail/TaskDetailScreenKt;
+HSPLcom/taskhero/feature/taskdetail/TaskDetailScreenKt;->TaskDetailScreen(Ljava/lang/String;Landroidx/navigation/NavController;Landroidx/compose/runtime/Composer;I)V
+
+Lcom/taskhero/feature/taskdetail/TaskDetailViewModel;
+HSPLcom/taskhero/feature/taskdetail/TaskDetailViewModel;-><init>(Landroidx/lifecycle/SavedStateHandle;Lcom/taskhero/domain/task/usecase/GetTaskByIdUseCase;Lcom/taskhero/domain/task/usecase/UpdateTaskUseCase;Lcom/taskhero/domain/task/usecase/DeleteTaskUseCase;)V
+HSPLcom/taskhero/feature/taskdetail/TaskDetailViewModel;->processIntent(Lcom/taskhero/feature/taskdetail/TaskDetailIntent;)V
+
+# ========================================
+# Performance Monitoring
+# ========================================
+Lcom/taskhero/core/common/performance/PerformanceMonitor;
+HSPLcom/taskhero/core/common/performance/PerformanceMonitor;-><init>()V
+HSPLcom/taskhero/core/common/performance/PerformanceMonitor;->trackStartup()V
+HSPLcom/taskhero/core/common/performance/PerformanceMonitor;->endStartup()V
+
+# Cache Manager
+Lcom/taskhero/core/common/performance/CacheManager;
+HSPLcom/taskhero/core/common/performance/CacheManager;-><init>(I)V
+HSPLcom/taskhero/core/common/performance/CacheManager;->get(Ljava/lang/Object;)Ljava/lang/Object;
+HSPLcom/taskhero/core/common/performance/CacheManager;->put(Ljava/lang/Object;Ljava/lang/Object;)V
+
+# ========================================
+# Hero Feature (Gamification)
+# ========================================
+Lcom/taskhero/core/database/dao/HeroDao;
+HSPLcom/taskhero/core/database/dao/HeroDao;->getHero()Lkotlinx/coroutines/flow/Flow;
+HSPLcom/taskhero/core/database/dao/HeroDao;->updateHero(Lcom/taskhero/core/database/entity/HeroEntity;)Ljava/lang/Object;
+
+Lcom/taskhero/core/database/entity/HeroEntity;
+HSPLcom/taskhero/core/database/entity/HeroEntity;-><init>(IIILjava/lang/String;I)V
+HSPLcom/taskhero/core/database/entity/HeroEntity;->getLevel()I
+HSPLcom/taskhero/core/database/entity/HeroEntity;->getXp()I
+
+# ========================================
+# Common UI Components
+# ========================================
+Lcom/taskhero/core/ui/components/LoadingIndicatorKt;
+Lcom/taskhero/core/ui/components/EmptyStateKt;
+Lcom/taskhero/core/ui/components/ErrorStateKt;
