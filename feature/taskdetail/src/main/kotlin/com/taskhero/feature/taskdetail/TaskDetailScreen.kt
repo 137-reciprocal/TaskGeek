@@ -57,6 +57,7 @@ import com.taskhero.domain.task.model.Task
 import com.taskhero.domain.task.model.TaskPriority
 import com.taskhero.domain.task.model.TaskStatus
 import com.taskhero.domain.timetracking.model.TimeEntry
+import com.taskhero.core.ui.components.EmptyTimeEntries
 import com.taskhero.feature.taskdetail.components.PrioritySelector
 import com.taskhero.feature.taskdetail.components.TagChip
 import com.taskhero.feature.taskdetail.components.UdaEditor
@@ -866,6 +867,13 @@ private fun TimeTrackingSection(
                     }
                 }
             }
+        } else if (activeTimeEntry == null && totalTimeSpent == 0L) {
+            Spacer(modifier = Modifier.height(8.dp))
+            EmptyTimeEntries(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            )
         }
     }
 }

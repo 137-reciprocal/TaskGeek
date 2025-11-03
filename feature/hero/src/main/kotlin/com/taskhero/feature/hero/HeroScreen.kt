@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.taskhero.core.ui.components.EmptyHeroProfile
 import com.taskhero.domain.hero.model.Hero
 import com.taskhero.domain.hero.model.Title
 import com.taskhero.domain.hero.model.XpHistoryItem

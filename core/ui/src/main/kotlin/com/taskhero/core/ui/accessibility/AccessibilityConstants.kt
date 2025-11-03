@@ -16,9 +16,11 @@ object AccessibilityConstants {
         const val TASK_CARD_PREFIX = "Task: "
         const val COMPLETE_TASK_BUTTON = "Mark task as complete"
         const val DELETE_TASK_BUTTON = "Delete task"
-        const val EMPTY_LIST = "No tasks found. Tap the add button to create your first task."
+        const val EMPTY_LIST = "All caught up! Add your first task to begin your adventure."
         const val FILTER_BUTTON = "Filter tasks"
         const val SORT_BUTTON = "Sort tasks"
+        const val QUICK_ENTRY_FIELD = "Quick add task using natural language. Example: tomorrow hashtag project at tag p1"
+        const val CREATE_QUICK_TASK_BUTTON = "Create task from quick entry"
 
         fun taskCard(description: String, status: String, priority: String?): String {
             val priorityText = priority?.let { ", Priority: $it" } ?: ""
@@ -56,6 +58,7 @@ object AccessibilityConstants {
         const val ADD_UDA_BUTTON = "Add custom attribute"
         const val EDIT_UDA_PREFIX = "Edit attribute: "
         const val DELETE_UDA_PREFIX = "Delete attribute: "
+        const val EMPTY_TIME_ENTRIES = "Start tracking time. Tap start to track time on this task."
 
         fun priorityButton(priority: String?, isSelected: Boolean): String {
             val selected = if (isSelected) "selected" else "not selected"
@@ -80,6 +83,7 @@ object AccessibilityConstants {
         const val LEVEL_BADGE = "Hero level badge"
         const val XP_PROGRESS_BAR = "Experience points progress"
         const val STATS_SECTION = "Hero statistics"
+        const val EMPTY_PROFILE = "Your adventure awaits. Complete tasks to level up your hero."
 
         fun heroLevel(level: Int): String {
             return "Hero Level $level"
@@ -117,6 +121,7 @@ object AccessibilityConstants {
         const val BURNDOWN_CHART = "Task burndown chart"
         const val CALENDAR_VIEW = "Calendar view"
         const val STATISTICS_SECTION = "Task statistics"
+        const val EMPTY_REPORTS = "Start completing tasks. Your progress will appear here."
 
         fun tabSelected(tabName: String): String {
             return "$tabName tab selected"

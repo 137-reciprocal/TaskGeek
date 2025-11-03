@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.taskhero.core.ui.components.EmptyReports
 import com.taskhero.feature.reports.components.BurndownChart
 import com.taskhero.feature.reports.components.CalendarView
 import com.taskhero.feature.reports.components.StatisticsCards
@@ -175,19 +176,9 @@ private fun BurndownTab(state: ReportsUiState.Success) {
                 modifier = Modifier.fillMaxWidth()
             )
         } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No burndown data available for the selected date range",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
+            EmptyReports(
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -390,19 +381,9 @@ private fun TimeTab(state: ReportsUiState.Success) {
         }
 
         if (state.timeByProject.isEmpty() && state.timeByDay.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No time tracking data available for the selected date range",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
+            EmptyReports(
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

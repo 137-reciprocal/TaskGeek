@@ -2,6 +2,7 @@ package com.taskhero.feature.tasklist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taskhero.core.parser.ParsedTaskData
 import com.taskhero.domain.task.model.SortOrder
 import com.taskhero.domain.task.model.Task
 import com.taskhero.domain.task.model.TaskFilter
@@ -59,6 +60,7 @@ class TaskListViewModel @Inject constructor(
         when (intent) {
             is TaskListIntent.LoadTasks -> loadTasks()
             is TaskListIntent.CreateTask -> createTask(intent.description)
+            is TaskListIntent.CreateQuickTask -> createQuickTask(intent.parsedData)
             is TaskListIntent.UpdateTask -> updateTask(intent.task)
             is TaskListIntent.DeleteTask -> deleteTask(intent.uuid)
             is TaskListIntent.CompleteTask -> completeTask(intent.uuid)
@@ -102,6 +104,37 @@ class TaskListViewModel @Inject constructor(
                 description = description,
                 status = TaskStatus.PENDING,
                 entry = currentTime,
+                urgency = 0.0
+            )
+
+            val result = addTaskUseCase(newTask)
+            if (result.isSuccess) {
+                _effect.emit(TaskListEffect.ShowSnackbar("Task created successfully"))
+            } else {
+                _effect.emit(
+                    TaskListEffect.ShowSnackbar(
+                        result.exceptionOrNull()?.message ?: "Failed to create task"
+                    )
+                )
+            }
+        }
+    }
+
+    /**
+     * Create a task from quick entry with parsed natural language data.
+     */
+    private fun createQuickTask(parsedData: ParsedTaskData) {
+        viewModelScope.launch {
+            val currentTime = System.currentTimeMillis()
+            val newTask = Task(
+                uuid = UUID.randomUUID().toString(),
+                description = parsedData.description,
+                status = TaskStatus.PENDING,
+                entry = currentTime,
+                due = parsedData.dueDate,
+                priority = parsedData.priority,
+                project = parsedData.project,
+                tags = parsedData.tags,
                 urgency = 0.0
             )
 

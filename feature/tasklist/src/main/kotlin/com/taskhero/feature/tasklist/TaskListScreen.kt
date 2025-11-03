@@ -1,6 +1,7 @@
 package com.taskhero.feature.tasklist
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,7 +22,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -30,6 +33,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.taskhero.core.ui.accessibility.AccessibilityConstants
 import com.taskhero.core.ui.accessibility.semanticDescription
 import com.taskhero.core.ui.accessibility.semanticHeading
+import com.taskhero.core.ui.components.EmptyTaskList
+import com.taskhero.feature.tasklist.components.QuickTaskEntry
 import com.taskhero.feature.tasklist.components.TaskCard
 
 /**
@@ -49,6 +54,7 @@ fun TaskListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var isQuickEntryMinimized by remember { mutableStateOf(false) }
 
     // Handle side effects
     LaunchedEffect(Unit) {
@@ -100,43 +106,66 @@ fun TaskListScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when (val state = uiState) {
-                is TaskListUiState.Loading -> {
-                    LoadingState(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .semanticDescription(AccessibilityConstants.Common.loading("tasks"))
-                    )
-                }
+            // Quick entry bar at top
+            QuickTaskEntry(
+                onCreateTask = { parsedData ->
+                    viewModel.onIntent(TaskListIntent.CreateQuickTask(parsedData))
+                },
+                onExpandToFull = {
+                    // Navigate to full task detail for creation
+                    onNavigateToDetail("new")
+                },
+                isMinimized = isQuickEntryMinimized,
+                onToggleMinimized = {
+                    isQuickEntryMinimized = !isQuickEntryMinimized
+                },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
 
-                is TaskListUiState.Success -> {
-                    SuccessState(
-                        state = state,
-                        onTaskClick = { uuid ->
-                            onNavigateToDetail(uuid)
-                        },
-                        onTaskComplete = { uuid ->
-                            viewModel.onIntent(TaskListIntent.CompleteTask(uuid))
-                        },
-                        onTaskDelete = { uuid ->
-                            viewModel.onIntent(TaskListIntent.DeleteTask(uuid))
-                        }
-                    )
-                }
+            // Main content area
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+            ) {
+                when (val state = uiState) {
+                    is TaskListUiState.Loading -> {
+                        LoadingState(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .semanticDescription(AccessibilityConstants.Common.loading("tasks"))
+                        )
+                    }
 
-                is TaskListUiState.Error -> {
-                    ErrorState(
-                        message = state.message,
-                        onRetry = {
-                            viewModel.onIntent(TaskListIntent.LoadTasks)
-                        },
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    is TaskListUiState.Success -> {
+                        SuccessState(
+                            state = state,
+                            onTaskClick = { uuid ->
+                                onNavigateToDetail(uuid)
+                            },
+                            onTaskComplete = { uuid ->
+                                viewModel.onIntent(TaskListIntent.CompleteTask(uuid))
+                            },
+                            onTaskDelete = { uuid ->
+                                viewModel.onIntent(TaskListIntent.DeleteTask(uuid))
+                            }
+                        )
+                    }
+
+                    is TaskListUiState.Error -> {
+                        ErrorState(
+                            message = state.message,
+                            onRetry = {
+                                viewModel.onIntent(TaskListIntent.LoadTasks)
+                            },
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
                 }
             }
         }
@@ -168,18 +197,12 @@ private fun SuccessState(
     modifier: Modifier = Modifier
 ) {
     if (state.tasks.isEmpty()) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .semanticDescription(AccessibilityConstants.TaskList.EMPTY_LIST),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "No tasks found. Tap + to create one!",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        EmptyTaskList(
+            onAddTask = {
+                // TODO: Navigate to add task screen or show task creation dialog
+            },
+            modifier = modifier.semanticDescription(AccessibilityConstants.TaskList.EMPTY_LIST)
+        )
     } else {
         LazyColumn(
             modifier = modifier.fillMaxSize()

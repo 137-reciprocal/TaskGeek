@@ -1,5 +1,6 @@
 package com.taskhero.feature.tasklist
 
+import com.taskhero.core.parser.ParsedTaskData
 import com.taskhero.domain.task.model.Task
 import com.taskhero.domain.task.model.TaskFilter
 import com.taskhero.domain.task.model.SortOrder
@@ -20,6 +21,13 @@ sealed interface TaskListIntent {
      * @property description The task description
      */
     data class CreateTask(val description: String) : TaskListIntent
+
+    /**
+     * Create a task from quick entry with parsed natural language data.
+     *
+     * @property parsedData The parsed task data from natural language input
+     */
+    data class CreateQuickTask(val parsedData: ParsedTaskData) : TaskListIntent
 
     /**
      * Update an existing task.
