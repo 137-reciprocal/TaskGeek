@@ -23,4 +23,9 @@ sealed interface TaskListEffect {
      * Navigate to add task screen.
      */
     data object NavigateToAddTask : TaskListEffect
+
+    /**
+     * Show brain dump dialog for adding multiple tasks.
+     */
+    data object ShowBrainDumpDialog : TaskListEffect
 }

@@ -66,6 +66,8 @@ class TaskListViewModel @Inject constructor(
             is TaskListIntent.CompleteTask -> completeTask(intent.uuid)
             is TaskListIntent.FilterChanged -> changeFilter(intent.filter)
             is TaskListIntent.SortChanged -> changeSortOrder(intent.sortOrder)
+            is TaskListIntent.OpenBrainDump -> openBrainDump()
+            is TaskListIntent.CreateMultipleTasks -> createMultipleTasks(intent.tasks)
         }
     }
 
@@ -286,5 +288,57 @@ class TaskListViewModel @Inject constructor(
         }
 
         return sorted
+    }
+
+    /**
+     * Open brain dump dialog.
+     */
+    private fun openBrainDump() {
+        viewModelScope.launch {
+            _effect.emit(TaskListEffect.ShowBrainDumpDialog)
+        }
+    }
+
+    /**
+     * Create multiple tasks from brain dump input.
+     * Shows progress and handles partial failures gracefully.
+     */
+    private fun createMultipleTasks(tasks: List<ParsedTaskData>) {
+        viewModelScope.launch {
+            val currentTime = System.currentTimeMillis()
+            var successCount = 0
+            var failureCount = 0
+
+            // Process each task
+            tasks.forEach { parsedData ->
+                val newTask = Task(
+                    uuid = UUID.randomUUID().toString(),
+                    description = parsedData.description,
+                    status = TaskStatus.PENDING,
+                    entry = currentTime,
+                    due = parsedData.dueDate,
+                    priority = parsedData.priority,
+                    project = parsedData.project,
+                    tags = parsedData.tags,
+                    urgency = 0.0
+                )
+
+                val result = addTaskUseCase(newTask)
+                if (result.isSuccess) {
+                    successCount++
+                } else {
+                    failureCount++
+                }
+            }
+
+            // Show appropriate message based on results
+            val message = when {
+                failureCount == 0 -> "Added $successCount task${if (successCount != 1) "s" else ""}!"
+                successCount == 0 -> "Failed to add tasks"
+                else -> "Added $successCount task${if (successCount != 1) "s" else ""}, $failureCount failed"
+            }
+
+            _effect.emit(TaskListEffect.ShowSnackbar(message))
+        }
     }
 }

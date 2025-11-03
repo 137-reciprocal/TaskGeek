@@ -63,4 +63,16 @@ sealed interface TaskListIntent {
      * @property sortOrder The new sort order
      */
     data class SortChanged(val sortOrder: SortOrder) : TaskListIntent
+
+    /**
+     * Open brain dump dialog for adding multiple tasks at once.
+     */
+    data object OpenBrainDump : TaskListIntent
+
+    /**
+     * Create multiple tasks from brain dump input.
+     *
+     * @property tasks List of parsed task data from brain dump
+     */
+    data class CreateMultipleTasks(val tasks: List<ParsedTaskData>) : TaskListIntent
 }

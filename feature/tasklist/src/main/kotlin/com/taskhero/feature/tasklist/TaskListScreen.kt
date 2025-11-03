@@ -8,10 +8,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -34,6 +36,7 @@ import com.taskhero.core.ui.accessibility.AccessibilityConstants
 import com.taskhero.core.ui.accessibility.semanticDescription
 import com.taskhero.core.ui.accessibility.semanticHeading
 import com.taskhero.core.ui.components.EmptyTaskList
+import com.taskhero.feature.tasklist.components.BrainDumpDialog
 import com.taskhero.feature.tasklist.components.QuickTaskEntry
 import com.taskhero.feature.tasklist.components.TaskCard
 
@@ -55,6 +58,7 @@ fun TaskListScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var isQuickEntryMinimized by remember { mutableStateOf(false) }
+    var showBrainDumpDialog by remember { mutableStateOf(false) }
 
     // Handle side effects
     LaunchedEffect(Unit) {
@@ -69,8 +73,22 @@ fun TaskListScreen(
                 is TaskListEffect.NavigateToAddTask -> {
                     // TODO: Implement navigation to add task screen
                 }
+                is TaskListEffect.ShowBrainDumpDialog -> {
+                    showBrainDumpDialog = true
+                }
             }
         }
+    }
+
+    // Show brain dump dialog
+    if (showBrainDumpDialog) {
+        BrainDumpDialog(
+            onDismiss = { showBrainDumpDialog = false },
+            onAddTasks = { tasks ->
+                viewModel.onIntent(TaskListIntent.CreateMultipleTasks(tasks))
+                showBrainDumpDialog = false
+            }
+        )
     }
 
     Scaffold(
@@ -82,6 +100,19 @@ fun TaskListScreen(
                         text = "Task Hero",
                         modifier = Modifier.semanticHeading()
                     )
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            viewModel.onIntent(TaskListIntent.OpenBrainDump)
+                        },
+                        modifier = Modifier.semanticDescription("Open brain dump")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Psychology,
+                            contentDescription = "Brain dump"
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
