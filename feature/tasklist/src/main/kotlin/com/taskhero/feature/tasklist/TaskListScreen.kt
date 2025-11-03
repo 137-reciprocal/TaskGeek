@@ -71,7 +71,8 @@ fun TaskListScreen(
                     onNavigateToDetail(effect.uuid)
                 }
                 is TaskListEffect.NavigateToAddTask -> {
-                    // TODO: Implement navigation to add task screen
+                    // Navigation handled by QuickTaskEntry and FAB
+                    onNavigateToDetail("new")
                 }
                 is TaskListEffect.ShowBrainDumpDialog -> {
                     showBrainDumpDialog = true
@@ -230,7 +231,8 @@ private fun SuccessState(
     if (state.tasks.isEmpty()) {
         EmptyTaskList(
             onAddTask = {
-                // TODO: Navigate to add task screen or show task creation dialog
+                // Navigate to task detail screen for new task
+                onTaskClick("new")
             },
             modifier = modifier.semanticDescription(AccessibilityConstants.TaskList.EMPTY_LIST)
         )

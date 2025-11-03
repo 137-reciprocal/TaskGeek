@@ -59,6 +59,9 @@ dependencies {
     // Kotlin Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
+    // Image Loading
+    implementation(libs.coil.compose)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

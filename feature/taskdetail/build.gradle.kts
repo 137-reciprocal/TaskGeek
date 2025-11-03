@@ -36,6 +36,7 @@ dependencies {
     // Core modules
     implementation(project(":core:common"))
     implementation(project(":core:ui"))
+    implementation(project(":core:parser"))
 
     // Domain modules
     implementation(project(":domain:task"))

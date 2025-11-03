@@ -60,7 +60,12 @@ import com.taskhero.domain.timetracking.model.TimeEntry
 import com.taskhero.core.ui.components.EmptyTimeEntries
 import com.taskhero.feature.taskdetail.components.PrioritySelector
 import com.taskhero.feature.taskdetail.components.TagChip
+import com.taskhero.feature.taskdetail.components.TaskDatePickerDialog
+import com.taskhero.feature.taskdetail.components.TagSelectorDialog
 import com.taskhero.feature.taskdetail.components.UdaEditor
+import com.taskhero.core.parser.DateExpressionParser
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -84,6 +89,49 @@ fun TaskDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTagSelector by remember { mutableStateOf(false) }
+
+    // Get current task state for dialogs
+    val currentState = uiState
+    val currentDueDate = if (currentState is TaskDetailUiState.Success) currentState.task.due else null
+    val availableTags = if (currentState is TaskDetailUiState.Success) currentState.availableTags else emptyList()
+    val selectedTags = if (currentState is TaskDetailUiState.Success) currentState.task.tags else emptyList()
+
+    // Show date picker dialog
+    if (showDatePicker) {
+        TaskDatePickerDialog(
+            currentDate = currentDueDate,
+            onDismiss = { showDatePicker = false },
+            onDateSelected = { millis ->
+                viewModel.onIntent(TaskDetailIntent.UpdateDueDate(millis))
+                showDatePicker = false
+            }
+        )
+    }
+
+    // Show tag selector dialog
+    if (showTagSelector) {
+        TagSelectorDialog(
+            availableTags = availableTags,
+            selectedTags = selectedTags,
+            onDismiss = { showTagSelector = false },
+            onTagsSelected = { newTags ->
+                // Remove old tags and add new ones
+                selectedTags.forEach { tag ->
+                    if (!newTags.contains(tag)) {
+                        viewModel.onIntent(TaskDetailIntent.RemoveTag(tag))
+                    }
+                }
+                newTags.forEach { tag ->
+                    if (!selectedTags.contains(tag)) {
+                        viewModel.onIntent(TaskDetailIntent.AddTag(tag))
+                    }
+                }
+                showTagSelector = false
+            }
+        )
+    }
 
     // Load task on first composition
     LaunchedEffect(taskUuid) {
@@ -101,10 +149,10 @@ fun TaskDetailScreen(
                     onNavigateBack()
                 }
                 is TaskDetailEffect.ShowDatePicker -> {
-                    // TODO: Implement date picker dialog
+                    showDatePicker = true
                 }
                 is TaskDetailEffect.ShowTagSelector -> {
-                    // TODO: Implement tag selector dialog
+                    showTagSelector = true
                 }
             }
         }
@@ -146,7 +194,9 @@ fun TaskDetailScreen(
                 is TaskDetailUiState.Success -> {
                     SuccessState(
                         state = state,
-                        onIntent = viewModel::onIntent
+                        onIntent = viewModel::onIntent,
+                        onShowDatePicker = { showDatePicker = true },
+                        onShowTagSelector = { showTagSelector = true }
                     )
                 }
 
@@ -185,6 +235,8 @@ private fun LoadingState(modifier: Modifier = Modifier) {
 private fun SuccessState(
     state: TaskDetailUiState.Success,
     onIntent: (TaskDetailIntent) -> Unit,
+    onShowDatePicker: () -> Unit,
+    onShowTagSelector: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -215,7 +267,8 @@ private fun SuccessState(
         // Due Date
         DueDateSection(
             dueDate = state.task.due,
-            onDueDateChange = { onIntent(TaskDetailIntent.UpdateDueDate(it)) }
+            onDueDateChange = { onIntent(TaskDetailIntent.UpdateDueDate(it)) },
+            onShowDatePicker = onShowDatePicker
         )
 
         // Project
@@ -229,7 +282,8 @@ private fun SuccessState(
             tags = state.task.tags,
             availableTags = state.availableTags,
             onAddTag = { onIntent(TaskDetailIntent.AddTag(it)) },
-            onRemoveTag = { onIntent(TaskDetailIntent.RemoveTag(it)) }
+            onRemoveTag = { onIntent(TaskDetailIntent.RemoveTag(it)) },
+            onShowTagSelector = onShowTagSelector
         )
 
         // Dependencies
@@ -396,9 +450,12 @@ private fun PrioritySection(
 private fun DueDateSection(
     dueDate: Long?,
     onDueDateChange: (Long?) -> Unit,
+    onShowDatePicker: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) }
+    var textInput by remember { mutableStateOf("") }
+    var showParseError by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
         Text(
@@ -413,14 +470,43 @@ private fun DueDateSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
-                value = dueDate?.let { dateFormat.format(Date(it)) } ?: "No due date",
-                onValueChange = { /* TODO: Parse date expression */ },
+                value = if (textInput.isNotEmpty()) textInput else (dueDate?.let { dateFormat.format(Date(it)) } ?: ""),
+                onValueChange = { input ->
+                    textInput = input
+                    showParseError = false
+
+                    // Try to parse date expression on enter or when user stops typing
+                    if (input.isNotBlank()) {
+                        val parsed = DateExpressionParser.parse(input)
+                        if (parsed != null) {
+                            val millis = parsed.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                            onDueDateChange(millis)
+                            textInput = ""
+                            showParseError = false
+                        }
+                    }
+                },
                 label = { Text("Due") },
                 modifier = Modifier.weight(1f),
-                readOnly = true
+                placeholder = { Text("e.g., tomorrow, +3d, 2025-12-31") },
+                isError = showParseError,
+                supportingText = if (showParseError) {
+                    { Text("Invalid date format") }
+                } else null,
+                trailingIcon = {
+                    IconButton(onClick = onShowDatePicker) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Pick date"
+                        )
+                    }
+                }
             )
             if (dueDate != null) {
-                TextButton(onClick = { onDueDateChange(null) }) {
+                TextButton(onClick = {
+                    onDueDateChange(null)
+                    textInput = ""
+                }) {
                     Text("Clear")
                 }
             }
@@ -456,16 +542,26 @@ private fun TagsSection(
     availableTags: List<String>,
     onAddTag: (String) -> Unit,
     onRemoveTag: (String) -> Unit,
+    onShowTagSelector: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var newTag by remember { mutableStateOf("") }
 
     Column(modifier = modifier) {
-        Text(
-            text = "Tags",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Tags",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            TextButton(onClick = onShowTagSelector) {
+                Text("Browse Tags")
+            }
+        }
         Spacer(modifier = Modifier.height(8.dp))
 
         // Existing tags

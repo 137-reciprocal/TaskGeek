@@ -26,6 +26,11 @@ android {
 }
 
 dependencies {
+    // Domain modules (for TaskStatus and TaskPriority enums)
+    implementation(project(":domain:task"))
+    implementation(project(":domain:hero"))
+    implementation(project(":domain:timetracking"))
+
     // Room Database
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

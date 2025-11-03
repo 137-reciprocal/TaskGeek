@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,27 +32,34 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.taskhero.core.ui.components.EmptyHeroProfile
 import com.taskhero.domain.hero.model.Hero
 import com.taskhero.domain.hero.model.Title
 import com.taskhero.domain.hero.model.XpHistoryItem
+import com.taskhero.feature.hero.components.ImagePickerDialog
 import com.taskhero.feature.hero.components.StatCard
 import com.taskhero.feature.hero.components.XpProgressBar
 import java.text.SimpleDateFormat
@@ -68,6 +76,18 @@ fun HeroScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showAvatarPicker by remember { mutableStateOf(false) }
+
+    // Show avatar picker dialog
+    if (showAvatarPicker) {
+        ImagePickerDialog(
+            onDismiss = { showAvatarPicker = false },
+            onImageSelected = { uri ->
+                viewModel.handleIntent(HeroIntent.UpdateAvatar(uri.toString()))
+                showAvatarPicker = false
+            }
+        )
+    }
 
     // Handle effects
     LaunchedEffect(Unit) {
@@ -77,7 +97,7 @@ fun HeroScreen(
                     snackbarHostState.showSnackbar(effect.message)
                 }
                 is HeroEffect.ShowAvatarPicker -> {
-                    // TODO: Implement avatar picker
+                    showAvatarPicker = true
                 }
             }
         }
@@ -125,6 +145,9 @@ fun HeroScreen(
                         },
                         onSelectTitle = { titleId ->
                             viewModel.handleIntent(HeroIntent.SelectTitle(titleId))
+                        },
+                        onEditAvatar = {
+                            showAvatarPicker = true
                         }
                     )
                 }
@@ -143,8 +166,23 @@ private fun HeroContent(
     titles: List<Title>,
     recentXpHistory: List<XpHistoryItem>,
     onUpdateDisplayName: (String) -> Unit,
-    onSelectTitle: (String) -> Unit
+    onSelectTitle: (String) -> Unit,
+    onEditAvatar: () -> Unit
 ) {
+    var showNameDialog by remember { mutableStateOf(false) }
+
+    // Show name edit dialog
+    if (showNameDialog) {
+        EditNameDialog(
+            currentName = hero.displayName,
+            onDismiss = { showNameDialog = false },
+            onConfirm = { newName ->
+                onUpdateDisplayName(newName)
+                showNameDialog = false
+            }
+        )
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -154,7 +192,8 @@ private fun HeroContent(
         item {
             HeroHeaderSection(
                 hero = hero,
-                onEditName = { /* TODO: Show dialog */ }
+                onEditName = { showNameDialog = true },
+                onEditAvatar = onEditAvatar
             )
         }
 
@@ -271,7 +310,8 @@ private fun HeroContent(
 @Composable
 private fun HeroHeaderSection(
     hero: Hero,
-    onEditName: () -> Unit
+    onEditName: () -> Unit,
+    onEditAvatar: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -283,6 +323,7 @@ private fun HeroHeaderSection(
             modifier = Modifier
                 .size(120.dp)
                 .clip(CircleShape)
+                .clickable { onEditAvatar() }
                 .background(MaterialTheme.colorScheme.primaryContainer)
                 .border(
                     width = 2.dp,
@@ -292,12 +333,20 @@ private fun HeroHeaderSection(
             contentAlignment = Alignment.Center
         ) {
             if (hero.avatarUri != null) {
-                // TODO: Load image from URI
-                Icon(
-                    imageVector = Icons.Default.Person,
+                AsyncImage(
+                    model = hero.avatarUri,
                     contentDescription = "Hero Avatar",
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    modifier = Modifier.size(120.dp),
+                    contentScale = ContentScale.Crop,
+                    error = {
+                        // Fallback to default icon if image fails to load
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Default Avatar",
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 )
             } else {
                 Icon(
@@ -434,4 +483,43 @@ private fun XpHistoryItemCard(xpItem: XpHistoryItem) {
             )
         }
     }
+}
+
+/**
+ * Dialog for editing hero display name.
+ */
+@Composable
+private fun EditNameDialog(
+    currentName: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var name by remember { mutableStateOf(currentName) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Hero Name") },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Display Name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(name) },
+                enabled = name.isNotBlank()
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

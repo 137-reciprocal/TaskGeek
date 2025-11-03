@@ -2,7 +2,6 @@ package com.taskhero.feature.settings
 
 import com.taskhero.core.common.model.ThemeMode
 import com.taskhero.core.common.model.UrgencyConfig
-import com.taskhero.feature.settings.BackupFrequency
 
 /**
  * UI State for Settings screen following MVI pattern.
